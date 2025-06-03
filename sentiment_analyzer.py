@@ -2,22 +2,33 @@ from typing import Dict, List, Tuple, Optional
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import Tool
+
 from langchain_anthropic import ChatAnthropic
+
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import HumanMessage, AIMessage
 import os
 import json
 from dotenv import load_dotenv
 
+
 # Load environment variables
 load_dotenv()
 
+# Configure Google Gemini API
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+
+
 class SentimentAnalyzer:
     def __init__(self):
+
         # Initialize the LLM with Claude
         self.llm = ChatAnthropic(
             model="claude-sonnet-4-20250514",
             temperature=0
+
+
         )
         
         # Define the tools for the agent
@@ -56,7 +67,7 @@ class SentimentAnalyzer:
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
         
-        # Initialize the memory with the new approach
+        # Initialize the memory
         self.memory = ConversationBufferMemory(
             memory_key="chat_history",
             return_messages=True,
