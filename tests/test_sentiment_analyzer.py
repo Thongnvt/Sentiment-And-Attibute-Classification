@@ -1,10 +1,19 @@
 import pytest
 from sentiment_analyzer import SentimentAnalyzer
+import os
+
+# Skip tests if API key is not present
+skip_if_no_api_key = pytest.mark.skipif(
+    not os.getenv('OPENAI_API_KEY'),
+    reason="OpenAI API key not found in environment variables"
+)
 
 @pytest.fixture
 def analyzer():
+    print(f"OPENAI_API_KEY present: {bool(os.getenv('OPENAI_API_KEY'))}")
     return SentimentAnalyzer()
 
+@skip_if_no_api_key
 def test_sentiment_analysis(analyzer):
     # Test positive sentiment
     result = analyzer.analyze("I absolutely love this product!")
@@ -21,6 +30,7 @@ def test_sentiment_analysis(analyzer):
     assert result["sentiment"] == "neutral"
     assert result["confidence"] > 0.5
 
+@skip_if_no_api_key
 def test_comparison_analysis(analyzer):
     # Test comparison between objects
     result = analyzer.analyze("The iPhone is faster but more expensive than the Samsung.")
@@ -29,11 +39,13 @@ def test_comparison_analysis(analyzer):
     assert result["comparison"]["object2"] == "Samsung"
     assert "attributes" in result["comparison"]
 
+@skip_if_no_api_key
 def test_empty_input(analyzer):
     # Test empty input
     with pytest.raises(Exception):
         analyzer.analyze("")
 
+@skip_if_no_api_key
 def test_special_characters(analyzer):
     # Test text with special characters
     result = analyzer.analyze("This is amazing!!! 😊")
