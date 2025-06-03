@@ -48,7 +48,9 @@ jobs:
         
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: 7be37775-8181-427b-8c9c-08c67cb20bfd
       with:
         file: ./coverage.xml
         fail_ci_if_error: true
-        token: ${{ secrets.CODECOV_TOKEN }} 
+        verbose: true 
