@@ -2,21 +2,28 @@ from typing import Dict, List, Tuple, Optional
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import Tool
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import HumanMessage, AIMessage
 import os
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
 
+# Configure Google Gemini API
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+genai.configure(api_key=GOOGLE_API_KEY)
+
 class SentimentAnalyzer:
     def __init__(self):
-        # Initialize the LLM
-        self.llm = ChatOpenAI(
-            model="gpt-3.5-turbo",
-            temperature=0
+        # Initialize the LLM with Gemini
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-pro",
+            temperature=0,
+            google_api_key=GOOGLE_API_KEY
         )
         
         # Define the tools for the agent
@@ -55,7 +62,7 @@ class SentimentAnalyzer:
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
         
-        # Initialize the memory with the new approach
+        # Initialize the memory
         self.memory = ConversationBufferMemory(
             memory_key="chat_history",
             return_messages=True,
