@@ -1,0 +1,50 @@
+name: Test and Quality Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov flake8
+        
+    - name: Run tests with coverage
+      run: |
+        pytest --cov=./ --cov-report=xml
+        
+    - name: Run linting
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        
+    - name: Check error count
+      id: error_check
+      run: |
+        ERROR_COUNT=$(flake8 . --count --select=E9,F63,F7,F82)
+        if [ $ERROR_COUNT -gt 5 ]; then
+          echo "Too many errors ($ERROR_COUNT). Maximum allowed is 5."
+          exit 1
+        fi
+        echo "Error count ($ERROR_COUNT) is within acceptable range."
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: true 
