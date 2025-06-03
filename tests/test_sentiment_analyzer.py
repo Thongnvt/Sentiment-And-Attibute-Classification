@@ -4,13 +4,13 @@ import os
 
 # Skip tests if API key is not present
 skip_if_no_api_key = pytest.mark.skipif(
-    not os.getenv('OPENAI_API_KEY'),
-    reason="OpenAI API key not found in environment variables"
+    not os.getenv('ANTHROPIC_API_KEY'),
+    reason="Anthropic API key not found in environment variables"
 )
 
 @pytest.fixture
 def analyzer():
-    print(f"OPENAI_API_KEY present: {bool(os.getenv('OPENAI_API_KEY'))}")
+    print(f"ANTHROPIC_API_KEY present: {bool(os.getenv('ANTHROPIC_API_KEY'))}")
     return SentimentAnalyzer()
 
 @skip_if_no_api_key
@@ -21,7 +21,7 @@ def test_sentiment_analysis(analyzer):
     assert result["confidence"] > 0.5
     
     # Test negative sentiment
-    result = analyzer.analyze("This is the worst experience ever.")
+    result = analyzer.analyze("The experience was terrible.")
     assert result["sentiment"] == "negative"
     assert result["confidence"] > 0.5
     
