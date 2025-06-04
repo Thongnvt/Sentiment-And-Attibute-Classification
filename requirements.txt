@@ -1,5 +1,5 @@
-langchain
-langchain-core
+langchain==0.0.350
+langchain-core==0.1.7
 langchain-google-genai
 google-generativeai
 python-dotenv
@@ -12,6 +12,6 @@ python-multipart
 pytest
 black
 flake8
-langchain_anthropic
+langchain-anthropic==0.0.1
 langchain_openai
-
+anthropic>=0.7.0
