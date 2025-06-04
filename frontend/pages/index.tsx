@@ -83,13 +83,13 @@ export default function Home() {
                     <Card>
                         <CardBody>
                             <VStack spacing={4} align="stretch">
-                                <HStack justify="space-between">
-                                    <Heading size="md">Analysis Results</Heading>
+                                <HStack justify="left">
+                                    <Heading size="md">Analysis Results:</Heading>
                                     <Badge
                                         colorScheme={
-                                            result.sentiment === 'positive'
+                                            result.sentiment === 'Positive'
                                                 ? 'green'
-                                                : result.sentiment === 'negative'
+                                                : result.sentiment === 'Negative'
                                                     ? 'red'
                                                     : 'gray'
                                         }
@@ -100,11 +100,23 @@ export default function Home() {
 
                                 <Box>
                                     <Text fontWeight="bold">Confidence:</Text>
-                                    <Progress
-                                        value={result.confidence * 100}
-                                        colorScheme="blue"
-                                        size="sm"
-                                    />
+                                    <HStack spacing={4} alignItems="center">
+                                        <Progress
+                                            flex="1"
+                                            value={result.confidence * 100}
+                                            colorScheme={
+                                                result.confidence === 1
+                                                    ? 'green'
+                                                    : result.confidence === 0
+                                                        ? 'red'
+                                                        : 'blue'
+                                            }
+                                            size="sm"
+                                        />
+                                        <Text width="60px" justifyContent = "left">
+                                            {result.confidence}
+                                        </Text>
+                                    </HStack>
                                 </Box>
 
                                 {result.implications && result.implications.length > 0 && (

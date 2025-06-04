@@ -2,23 +2,23 @@ from typing import Dict, List, Tuple, Optional
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import Tool
-
 from langchain_anthropic import ChatAnthropic
-
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import HumanMessage, AIMessage
 import os
 import json
 from dotenv import load_dotenv
-
+import json
+from transformers import pipeline
 
 # Load environment variables
 load_dotenv()
 
 # Configure Google Gemini API
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+# GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-
+# Configure Anthropic API
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")  
 
 class SentimentAnalyzer:
     def __init__(self):
@@ -101,18 +101,34 @@ class SentimentAnalyzer:
             2. POSITIVE: Text containing words like 'love', 'great', 'excellent', 'amazing', 'wonderful', 'best'
             3. NEUTRAL: Text that is factual or contains mixed sentiments
             
-            You must strictly follow these rules. If the text contains any negative words, it MUST be classified as negative."""),
+            You must strictly follow these rules. If the text contains any negative words, it MUST be classified as negative.
+            
+            For confidence values:
+            - POSITIVE sentiment should have confidence = 1
+            - NEGATIVE sentiment should have confidence = 0
+            - NEUTRAL sentiment should have confidence = 0.5"""),
             ("human", f"""Analyze this text: "{text}"
             
             Return a JSON object with these fields:
-            - sentiment: "positive", "negative", or "neutral"
-            - confidence: number between 0 and 1
+            - sentiment: "Positive", "Negative", or "Neutral"
+            - confidence: 1 for Positive, 0 for Negative, 0.5 for Neutral
             - implications: list of any hidden meanings
             - explanation: brief explanation of your classification""")
         ]
         
         response = self.llm.invoke(messages)
-        return self._parse_response(response.content)
+        parsed_response = self._parse_response(response.content)
+        
+        # Ensure correct confidence value based on sentiment
+        sentiment = parsed_response.get("sentiment", "").lower()
+        if sentiment == "positive":
+            parsed_response["confidence"] = 1.0
+        elif sentiment == "negative":
+            parsed_response["confidence"] = 0.0
+        else:  # neutral
+            parsed_response["confidence"] = 0.5
+            
+        return parsed_response
     
     def _analyze_comparison(self, text: str) -> Dict:
         """
@@ -155,7 +171,7 @@ class SentimentAnalyzer:
                         "attributes": {
                             attr: {
                                 parsed_data["objects_being_compared"][0]["name"]: value,
-                                parsed_data["objects_being_compared"][1]["name"]: value
+                                parsed_data["objects_being_compared"][1]["name"]: value,
                             }
                             for attr, value in parsed_data["attributes"][parsed_data["objects_being_compared"][0]["name"]]["explicit_attributes"].items()
                         }
@@ -163,8 +179,22 @@ class SentimentAnalyzer:
                 }
             
             # For sentiment analysis, ensure we have the required fields
-            if "sentiment" in parsed_data and "confidence" in parsed_data:
-                return parsed_data
+            if "sentiment" in parsed_data:
+                # Set confidence based on sentiment
+                sentiment = parsed_data["sentiment"].lower()
+                if sentiment == "positive":
+                    confidence = 1.0
+                elif sentiment == "negative":
+                    confidence = 0.0
+                else:  # neutral
+                    confidence = 0.5
+
+                return {
+                    "sentiment": parsed_data["sentiment"],
+                    "confidence": confidence,
+                    "implications": parsed_data.get("implications", []),
+                    "explanation": parsed_data.get("explanation", "No explanation provided")
+                }
             else:
                 print(f"Warning: LLM response did not contain expected keys. Response: {response}")
                 return {"sentiment": "error", "confidence": 0.0, "explanation": "Failed to parse LLM response"}
