@@ -1,6 +1,6 @@
 # Advanced Sentiment Analysis with LangChain
 
-This project implements an advanced sentiment analysis system using LangChain and OpenAI's GPT models. It can analyze text sentiment, understand implications, and compare attributes between objects.
+This project implements an advanced sentiment analysis system using LangChain and Anthropic Claude models. It can analyze text sentiment, understand implications, and compare attributes between objects.
 
 ## Features
 
@@ -15,7 +15,7 @@ This project implements an advanced sentiment analysis system using LangChain an
 
 - Python 3.11 or higher
 - Node.js 16 or higher
-- OpenAI API key
+- Anthropic API key
 - Git
 
 ## Setup
@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 3. Create a `.env` file in the root directory:
 ```
-OPENAI_API_KEY=your-api-key-here
+ANTHROPIC_API_KEY=your-api-key-here
 ```
 
 4. Set up the frontend:

@@ -1,92 +1,26 @@
 from typing import Dict, List, Tuple, Optional
-from langchain.agents import AgentExecutor, create_openai_functions_agent
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.tools import Tool
-
 from langchain_anthropic import ChatAnthropic
-
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import HumanMessage, AIMessage
 import os
 import json
 from dotenv import load_dotenv
 
-
 # Load environment variables
 load_dotenv()
 
-# Configure Google Gemini API
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-
-
-
 class SentimentAnalyzer:
     def __init__(self):
-
         # Initialize the LLM with Claude
         self.llm = ChatAnthropic(
             model="claude-sonnet-4-20250514",
             temperature=0
-
-
         )
-        
-        # Define the tools for the agent
-        self.tools = [
-            Tool(
-                name="analyze_sentiment",
-                func=self._analyze_sentiment,
-                description="Analyzes the sentiment of a given text, including implications"
-            ),
-            Tool(
-                name="analyze_comparison",
-                func=self._analyze_comparison,
-                description="Analyzes and compares attributes between multiple objects in text"
-            )
-        ]
-        
-        # Create the prompt template
-        self.prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are an expert sentiment analyzer that can:
-            1. Detect the overall sentiment (positive, negative, or neutral)
-            2. Understand implications and hidden meanings in text
-            3. Compare attributes between multiple objects when present
-            4. Provide detailed explanations for your analysis
-            5. Interpolate missing attributes when comparing objects
-            
-            When analyzing text with multiple objects, identify:
-            - The objects being compared
-            - Their respective attributes
-            - The comparison relationship
-            - The sentiment towards each object
-            - Missing attributes that can be inferred
-            
-            Provide your analysis in a structured format."""),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ])
         
         # Initialize the memory
         self.memory = ConversationBufferMemory(
             memory_key="chat_history",
-            return_messages=True,
-            output_key="output"
-        )
-        
-        # Initialize the agent
-        self.agent = create_openai_functions_agent(
-            llm=self.llm,
-            tools=self.tools,
-            prompt=self.prompt
-        )
-        
-        # Create the agent executor
-        self.agent_executor = AgentExecutor(
-            agent=self.agent,
-            tools=self.tools,
-            verbose=True,
-            memory=self.memory
+            return_messages=True
         )
     
     def _analyze_sentiment(self, text: str) -> Dict:
@@ -101,14 +35,14 @@ class SentimentAnalyzer:
             2. POSITIVE: Text containing words like 'love', 'great', 'excellent', 'amazing', 'wonderful', 'best'
             3. NEUTRAL: Text that is factual or contains mixed sentiments
             
-            You must strictly follow these rules. If the text contains any negative words, it MUST be classified as negative."""),
-            ("human", f"""Analyze this text: "{text}"
+            You must strictly follow these rules. If the text contains any negative words, it MUST be classified as negative.
             
             Return a JSON object with these fields:
             - sentiment: "positive", "negative", or "neutral"
             - confidence: number between 0 and 1
             - implications: list of any hidden meanings
-            - explanation: brief explanation of your classification""")
+            - explanation: brief explanation of your classification"""),
+            ("human", f"Analyze this text: {text}")
         ]
         
         response = self.llm.invoke(messages)
@@ -118,20 +52,34 @@ class SentimentAnalyzer:
         """
         Internal method to analyze comparisons between objects
         """
-        prompt = f"""Analyze the following text for object comparison and attribute analysis:
+        messages = [
+            ("system", """You are an expert at analyzing comparisons between objects in text.
+            
+            When analyzing text, identify:
+            1. The objects being compared
+            2. Their respective attributes
+            3. The comparison relationship
+            4. The sentiment towards each object
+            
+            Return a JSON object with this structure:
+            {
+                "objects_being_compared": [
+                    {"name": "object1_name"},
+                    {"name": "object2_name"}
+                ],
+                "attributes": {
+                    "object1_name": {
+                        "explicit_attributes": {
+                            "attribute1": "value1",
+                            "attribute2": "value2"
+                        }
+                    }
+                }
+            }"""),
+            ("human", f"Analyze this text: {text}")
+        ]
         
-        Text: {text}
-        
-        Provide a detailed analysis including:
-        1. Objects being compared
-        2. Attributes of each object (including interpolated attributes)
-        3. Comparison relationships
-        4. Sentiment towards each object
-        5. Confidence scores for each comparison
-        
-        Format the response as a JSON object with these fields."""
-        
-        response = self.llm.invoke(prompt)
+        response = self.llm.invoke(messages)
         return self._parse_response(response.content)
     
     def _parse_response(self, response: str) -> Dict:
@@ -148,19 +96,23 @@ class SentimentAnalyzer:
             
             # For comparison analysis, ensure we have the right structure
             if "objects_being_compared" in parsed_data:
-                return {
-                    "comparison": {
-                        "object1": parsed_data["objects_being_compared"][0]["name"],
-                        "object2": parsed_data["objects_being_compared"][1]["name"],
-                        "attributes": {
-                            attr: {
-                                parsed_data["objects_being_compared"][0]["name"]: value,
-                                parsed_data["objects_being_compared"][1]["name"]: value
+                try:
+                    return {
+                        "comparison": {
+                            "object1": parsed_data["objects_being_compared"][0].get("name", ""),
+                            "object2": parsed_data["objects_being_compared"][1].get("name", ""),
+                            "attributes": {
+                                attr: {
+                                    parsed_data["objects_being_compared"][0].get("name", ""): value,
+                                    parsed_data["objects_being_compared"][1].get("name", ""): value
+                                }
+                                for attr, value in parsed_data.get("attributes", {}).get(parsed_data["objects_being_compared"][0].get("name", ""), {}).get("explicit_attributes", {}).items()
                             }
-                            for attr, value in parsed_data["attributes"][parsed_data["objects_being_compared"][0]["name"]]["explicit_attributes"].items()
                         }
                     }
-                }
+                except Exception as e:
+                    print(f"Comparison parsing error: {e}, response: {parsed_data}")
+                    return {"sentiment": "error", "confidence": 0.0, "explanation": f"Comparison parsing error: {e}"}
             
             # For sentiment analysis, ensure we have the required fields
             if "sentiment" in parsed_data and "confidence" in parsed_data:
@@ -173,19 +125,29 @@ class SentimentAnalyzer:
             print(f"Error: Could not decode JSON from LLM response: {response}")
             return {"sentiment": "error", "confidence": 0.0, "explanation": "Invalid JSON response from LLM"}
         except Exception as e:
-            print(f"An unexpected error occurred during parsing: {e}")
+            print(f"An unexpected error occurred during parsing: {e}, response: {response}")
             return {"sentiment": "error", "confidence": 0.0, "explanation": f"Parsing error: {e}"}
     
     def analyze(self, text: str) -> Dict:
         """
-        Main method to analyze text using the agent
+        Main method to analyze text using the LLM
         """
         # Check for empty input
         if not text or not text.strip():
             raise ValueError("Input text cannot be empty")
             
         # Determine if the text contains a comparison
-        comparison_prompt = f"""Does the following text contain a comparison between two or more objects?
+        comparison_prompt = f"""Does the following text contain a direct comparison between two or more distinct objects/entities?
+        Examples of comparisons:
+        - "The iPhone is faster than the Samsung"
+        - "Product A has better features than Product B"
+        - "Company X's revenue is higher than Company Y's"
+        
+        Examples of non-comparisons:
+        - "The food was great but the service was terrible" (mixed sentiment)
+        - "I like both options" (general statement)
+        - "The movie was interesting, to say the least" (implication)
+        
         Text: {text}
         Answer with just 'yes' or 'no'."""
         
