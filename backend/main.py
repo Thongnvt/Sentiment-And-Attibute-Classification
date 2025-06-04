@@ -42,11 +42,11 @@ class AnalysisResponse(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"message": "Sentiment Analysis API is running"}
+    return {"message": "Sentiment Analysis API is running", "status": "ok"}
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "message": "API is running"}
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_text(request: TextAnalysisRequest):
@@ -72,4 +72,9 @@ async def analyze_text(request: TextAnalysisRequest):
         else:
             raise HTTPException(status_code=400, detail="Invalid analysis type")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+# For Vercel serverless deployment
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
