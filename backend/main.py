@@ -9,7 +9,13 @@ from dotenv import load_dotenv
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sentiment_analyzer import SentimentAnalyzer
+try:
+    from sentiment_analyzer import SentimentAnalyzer
+except ImportError:
+    # For Vercel deployment
+    import sys
+    sys.path.append('/var/task')
+    from sentiment_analyzer import SentimentAnalyzer
 
 app = FastAPI(title="Advanced Sentiment Analysis API")
 
