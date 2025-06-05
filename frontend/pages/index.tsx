@@ -41,14 +41,15 @@ export default function Home() {
                 analysis_type: 'sentiment'
             };
             console.log('Sending request with data:', requestData);
-            const response = await axios.post('/api/analyze', requestData);
+            const response = await axios.post('/analyze', requestData);
             setResult(response.data);
-        } catch (error) {
+        } catch (error: any) {
+            console.error('Error details:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to analyze text',
+                description: error.response?.data?.detail || 'Failed to analyze text',
                 status: 'error',
-                duration: 3000,
+                duration: 5000,
             });
         }
         setLoading(false);
