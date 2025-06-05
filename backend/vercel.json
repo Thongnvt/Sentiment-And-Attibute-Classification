@@ -22,6 +22,6 @@
     ],
     "env": {
         "NODE_VERSION": "18.x",
-        "PYTHONPATH": "/var/task"
+        "PYTHONPATH": "/var/task/.."
     }
 }

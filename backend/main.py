@@ -7,15 +7,18 @@ import os
 from dotenv import load_dotenv
 
 # Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
 
 try:
     from sentiment_analyzer import SentimentAnalyzer
-except ImportError:
-    # For Vercel deployment
-    import sys
-    sys.path.append('/var/task')
-    from sentiment_analyzer import SentimentAnalyzer
+except ImportError as e:
+    print(f"Import error: {e}")
+    print(f"Python path: {sys.path}")
+    print(f"Current directory: {os.getcwd()}")
+    print(f"Files in current directory: {os.listdir('.')}")
+    print(f"Files in parent directory: {os.listdir('..')}")
+    raise
 
 app = FastAPI(title="Advanced Sentiment Analysis API")
 
