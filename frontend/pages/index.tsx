@@ -36,11 +36,12 @@ export default function Home() {
 
         setLoading(true);
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8001';
-            const response = await axios.post(`${apiUrl}/analyze`, {
+            const requestData = {
                 text,
                 analysis_type: 'sentiment'
-            });
+            };
+            console.log('Sending request with data:', requestData);
+            const response = await axios.post('/api/analyze', requestData);
             setResult(response.data);
         } catch (error) {
             toast({

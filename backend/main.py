@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict
 import sys
 import os
+from dotenv import load_dotenv
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -77,4 +78,12 @@ async def analyze_text(request: TextAnalysisRequest):
 # For Vercel serverless deployment
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(
+        "main:app",
+        host="127.0.0.1",
+        port=3000,
+        reload=True,
+        ssl_keyfile=None,
+        ssl_certfile=None,
+        log_level="info"
+    ) 
