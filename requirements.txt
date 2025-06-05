@@ -12,6 +12,6 @@ python-multipart
 pytest
 black
 flake8
-langchain-anthropic==0.0.1
+langchain_anthropic==0.0.1
 langchain_openai
 anthropic>=0.7.0
