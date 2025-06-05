@@ -7,7 +7,10 @@
             "config": {
                 "runtime": "python3.9",
                 "maxLambdaSize": "15mb",
-                "buildCommand": "pip install -r requirements.txt"
+                "buildCommand": "pip install -r requirements.txt",
+                "includeFiles": [
+                    "sentiment_analysis.py"
+                ]
             }
         }
     ],
