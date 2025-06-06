@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
         const backendUrl = process.env.NODE_ENV === 'development'
-            ? 'http://127.0.0.1:3000'
+            ? 'http://localhost:8001'  // FastAPI server port
             : process.env.NEXT_PUBLIC_API_URL;
 
         console.log('Request body:', req.body);

@@ -12,6 +12,18 @@
     ],
     "routes": [
         {
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
+        },
+        {
+            "src": "/analyze",
+            "dest": "/api/analyze",
+            "methods": [
+                "POST",
+                "OPTIONS"
+            ]
+        },
+        {
             "src": "/(.*)",
             "dest": "/$1"
         }

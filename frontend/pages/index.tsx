@@ -17,6 +17,9 @@ import {
 } from '@chakra-ui/react';
 import axios from 'axios';
 
+// Configure axios defaults
+axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 export default function Home() {
     const [text, setText] = useState('');
     const [loading, setLoading] = useState(false);
@@ -41,7 +44,7 @@ export default function Home() {
                 analysis_type: 'sentiment'
             };
             console.log('Sending request with data:', requestData);
-            const response = await axios.post('/analyze', requestData);
+            const response = await axios.post('/api/analyze', requestData);
             setResult(response.data);
         } catch (error: any) {
             console.error('Error details:', error);
