@@ -9,7 +9,8 @@
                 "maxLambdaSize": "15mb",
                 "buildCommand": "pip install -r requirements.txt",
                 "includeFiles": [
-                    "sentiment_analysis.py"
+                    "sentiment_analyzer.py",
+                    "requirements.txt"
                 ]
             }
         },

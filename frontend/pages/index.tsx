@@ -18,7 +18,52 @@ import {
 import axios from 'axios';
 
 // Configure axios defaults
-axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = 'http://localhost:3001';  // Hardcode the backend URL for development
+console.log('Using API URL:', API_URL); // Debug log
+
+// Configure axios instance with specific settings
+const api = axios.create({
+    baseURL: API_URL,
+    timeout: 10000, // 10 second timeout
+    headers: {
+        'Content-Type': 'application/json',
+    }
+});
+
+// Add request interceptor for debugging
+api.interceptors.request.use(request => {
+    console.log('Starting Request:', {
+        url: request.url,
+        method: request.method,
+        baseURL: request.baseURL,
+        fullURL: `${request.baseURL}${request.url}`
+    });
+    return request;
+});
+
+// Add response interceptor for debugging
+api.interceptors.response.use(
+    response => {
+        console.log('Response:', {
+            status: response.status,
+            url: response.config.url,
+            baseURL: response.config.baseURL
+        });
+        return response;
+    },
+    error => {
+        console.error('API Error:', {
+            url: error.config?.url,
+            baseURL: error.config?.baseURL,
+            fullURL: `${error.config?.baseURL}${error.config?.url}`,
+            method: error.config?.method,
+            status: error.response?.status,
+            message: error.message,
+            response: error.response?.data
+        });
+        return Promise.reject(error);
+    }
+);
 
 export default function Home() {
     const [text, setText] = useState('');
@@ -43,14 +88,22 @@ export default function Home() {
                 text,
                 analysis_type: 'sentiment'
             };
-            console.log('Sending request with data:', requestData);
-            const response = await axios.post('/api/analyze', requestData);
+            console.log('Sending request to:', `${API_URL}/api/analyze`); // Debug log
+            const response = await api.post('/api/analyze', requestData);
             setResult(response.data);
         } catch (error: any) {
             console.error('Error details:', error);
+            let errorMessage = 'Failed to analyze text';
+
+            if (error.code === 'ECONNREFUSED') {
+                errorMessage = 'Cannot connect to the server. Please make sure the backend is running on port 3001.';
+            } else if (error.response) {
+                errorMessage = error.response.data?.detail || error.response.data?.message || errorMessage;
+            }
+
             toast({
                 title: 'Error',
-                description: error.response?.data?.detail || 'Failed to analyze text',
+                description: errorMessage,
                 status: 'error',
                 duration: 5000,
             });
